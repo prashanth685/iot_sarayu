@@ -274,7 +274,12 @@ const SmallGraph = ({ topic, height, viewgraph }) => {
   useEffect(() => {
     socket.current = io("http://13.203.94.55:4000", {
       path: "/socket.io/",
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
+      secure: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 5000,
+      upgrade: false, 
     });
 
     socket.current.emit("subscribeToTopic", topic);

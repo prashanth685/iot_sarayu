@@ -7,11 +7,13 @@ const socketCache = new Map();
 const getCachedSocket = (topic) => {
   if (!socketCache.has(topic)) {
     const newSocket = io("http://13.203.94.55:4000", {
-      transports: ["websocket", "polling"],
-      autoConnect: true,
+      path: "/socket.io/",
+      transports: ["websocket"],
+      secure: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 5000,
+      upgrade: false, 
     });
 
     newSocket.on("connect", () => console.log(`Socket connected for ${topic}`));
@@ -37,7 +39,7 @@ const LiveDataTd = ({ topic, onTimestampUpdate }) => {
     const { socket } = topicEntry;
 
     const handleMessage = (data) => {
-      // console.log(`Message received for ${topic}:`, data);
+      console.log(`Message received for ${topic}:`, data);
       const messageData = data?.message?.message?.message || data?.message?.message || data?.message;
       const timestamp = data?.message?.timestamp;
       setLiveMessage(messageData);
@@ -48,7 +50,6 @@ const LiveDataTd = ({ topic, onTimestampUpdate }) => {
 
     if (topicEntry.subscribers === 0) {
       socket.emit("subscribeToTopic", topic);
-      // console.log(`Subscribed to ${topic}`);
       socket.on("liveMessage", handleMessage);
       topicEntry.messageHandler = handleMessage;
     }

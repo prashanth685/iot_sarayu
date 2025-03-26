@@ -7,8 +7,14 @@ const Type4 = ({ topic, minValue = 0, maxValue = 100, unit = "RPM", label = "n/a
 
   useEffect(() => {
     const socket = io("http://13.203.94.55:4000", {
-      path: "/socket.io/",  
-      transports: ["websocket", "polling"]});
+      path: "/socket.io/",
+      transports: ["websocket"],
+      secure: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 5000,
+      upgrade: false, 
+    });
     socket.emit("subscribeToTopic", topic);
     socket.on("liveMessage", (data) => {
       setValue(
