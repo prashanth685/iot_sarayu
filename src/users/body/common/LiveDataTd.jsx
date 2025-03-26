@@ -6,7 +6,7 @@ const socketCache = new Map();
 
 const getCachedSocket = (topic) => {
   if (!socketCache.has(topic)) {
-    const newSocket = io("http://localhost:4000", {
+    const newSocket = io("http://13.203.94.55:4000", {
       transports: ["websocket", "polling"],
       autoConnect: true,
       reconnection: true,
