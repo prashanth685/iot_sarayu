@@ -62,9 +62,9 @@ const Report = () => {
 
   useEffect(() => {
     if (reportData.length > 0) {
-      console.log("Processing reportData into mergedReportData...");
-      console.log("reportData length:", reportData.length);
-      console.log("selectedTagnames:", selectedTagnames);
+      // console.log("Processing reportData into mergedReportData...");
+      // console.log("reportData length:", reportData.length);
+      // console.log("selectedTagnames:", selectedTagnames);
 
       const mergedData = [];
       const timestampMap = new Map();
@@ -92,7 +92,7 @@ const Report = () => {
       mergedData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       setMergedReportData(mergedData);
 
-      console.log("Merged Report Data length:", mergedData.length);
+      // console.log("Merged Report Data length:", mergedData.length);
     } else {
       setMergedReportData([]);
     }
@@ -144,7 +144,7 @@ const Report = () => {
         limit: itemsPerPage,
       });
 
-      console.log("API Response:", response.data);
+      // console.log("API Response:", response.data);
 
       clearInterval(progressInterval);
       setLoadingProgress(100);
