@@ -525,7 +525,7 @@ const Dashboard = () => {
                   Live
                 </th>
                 <th>Unit</th>
-                <th>Relative</th>
+                {/* <th>Relative</th> */}
                 <th>LastUpdatedAt</th>
                 <th>TodayMax</th>
                 <th>YesterdayMax</th>
@@ -551,7 +551,7 @@ const Dashboard = () => {
                   </td>
                   <LiveDataTd topic={topic} onTimestampUpdate={handleTimestampUpdate} />
                   <td>{unit}</td>
-                  <td>{getRelativeTime(topic)}</td>
+                  {/* <td>{getRelativeTime(topic)}</td> */}
                   <td>{getLastUpdatedAt(topic)}</td>
                   <TodayTd topic={topic} />
                   <YestardayTd topic={topic} />

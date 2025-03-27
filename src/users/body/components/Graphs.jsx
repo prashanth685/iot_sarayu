@@ -27,10 +27,12 @@ const Dashboard = () => {
   const [allTopicsWithLabels, setAllTopicsWithLabels] = useState([]);
   const itemsPerPage = 4;
 
-  // State to store time range for each topic
+  // State to store time range and last fetch time for each topic
   const [timeRanges, setTimeRanges] = useState({});
-  // State to track which topics are currently being fetched
+  const [lastFetchTimes, setLastFetchTimes] = useState({}); // New state for tracking last fetch times
   const [fetchingTopics, setFetchingTopics] = useState(new Set());
+
+  const RATE_LIMIT_MS = 120000; // 2 minutes in milliseconds
 
   useEffect(() => {
     fetchAllTopicsLabels();
@@ -66,8 +68,17 @@ const Dashboard = () => {
   };
 
   const fetchStatsForTopic = useCallback(async (topic, timeRange) => {
-    // Skip if already fetching for this topic
     if (fetchingTopics.has(topic)) {
+      return;
+    }
+
+    const now = Date.now();
+    const lastFetch = lastFetchTimes[topic] || 0;
+    const timeSinceLastFetch = now - lastFetch;
+
+    // Only fetch if 2 minutes have passed since the last fetch
+    if (timeSinceLastFetch < RATE_LIMIT_MS) {
+      // console.log(`Rate limit: Skipping fetch for ${topic}, ${Math.round((RATE_LIMIT_MS - timeSinceLastFetch) / 1000)}s remaining`);
       return;
     }
 
@@ -78,43 +89,48 @@ const Dashboard = () => {
     });
 
     try {
-      const now = new Date();
+      const nowDate = new Date();
       let from;
 
       switch (timeRange) {
         case "24 hours":
-          from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 24 * 60 * 60 * 1000);
           break;
         case "2 days":
-          from = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 2 * 24 * 60 * 60 * 1000);
           break;
         case "3 days":
-          from = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 3 * 24 * 60 * 60 * 1000);
           break;
         case "1 week":
-          from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 7 * 24 * 60 * 60 * 1000);
           break;
         case "1 month":
-          from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 30 * 24 * 60 * 60 * 1000);
           break;
         default:
-          from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          from = new Date(nowDate.getTime() - 24 * 60 * 60 * 1000);
       }
 
       const res = await apiClient.post(`/mqtt/graph-min-max-avg`, {
         topics: [topic],
         from: from.toISOString(),
-        to: now.toISOString(),
+        to: nowDate.toISOString(),
       });
 
       setStatsData((prev) => ({
         ...prev,
         [topic]: res.data[topic] || { avg: "N/A", min: null, max: null },
       }));
+
+      // Update last fetch time
+      setLastFetchTimes((prev) => ({
+        ...prev,
+        [topic]: Date.now(),
+      }));
     } catch (error) {
       console.error(`Error fetching stats for topic ${topic}:`, error);
       toast.error(`Failed to fetch stats for ${getTopicLabel(topic)}: ${error.message}`);
-      // Set default stats in case of failure to prevent further errors
       setStatsData((prev) => ({
         ...prev,
         [topic]: { avg: "N/A", min: null, max: null },
@@ -126,7 +142,7 @@ const Dashboard = () => {
         return newSet;
       });
     }
-  }, [fetchingTopics]);
+  }, [fetchingTopics, lastFetchTimes]);
 
   useEffect(() => {
     const topics =
@@ -137,7 +153,6 @@ const Dashboard = () => {
         : [];
 
     if (topics.length > 0) {
-      // Initialize time ranges for each topic to "24 hours" if not already set
       const initialTimeRanges = {};
       let needsUpdate = false;
       topics.forEach((topic) => {
@@ -151,13 +166,21 @@ const Dashboard = () => {
         setTimeRanges((prev) => ({ ...prev, ...initialTimeRanges }));
       }
 
-      // Fetch stats for each topic based on its time range
       topics.forEach((topic) => {
         const timeRange = timeRanges[topic] || "24 hours";
         fetchStatsForTopic(topic, timeRange);
       });
     }
-  }, [navHeader?.topics, loggedInUser?.graphwl, user.role, fetchStatsForTopic]);
+  }, [navHeader?.topics, loggedInUser?.graphwl, user.role, fetchStatsForTopic, timeRanges]);
+
+  const handleTimeRangeChange = (topic, newTimeRange) => {
+    setTimeRanges((prev) => ({
+      ...prev,
+      [topic]: newTimeRange,
+    }));
+    // Fetch immediately when time range changes, bypassing the rate limit once
+    fetchStatsForTopic(topic, newTimeRange);
+  };
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
@@ -169,7 +192,6 @@ const Dashboard = () => {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
 
-  // For supervisors: Use navHeader.topics, paginated
   const supervisorTopics = navHeader?.topics || [];
   const pageCount = Math.ceil(supervisorTopics.length / itemsPerPage);
   const currentSupervisorTopics = supervisorTopics.slice(
@@ -177,10 +199,8 @@ const Dashboard = () => {
     (currentPage + 1) * itemsPerPage
   );
 
-  // For non-supervisors: Use graphwl, no pagination
   const graphwlTopics = loggedInUser?.graphwl || [];
 
-  // Function to get the label for a topic
   const getTopicLabel = (topic) => {
     const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
     if (matchedTopic) {
@@ -193,7 +213,6 @@ const Dashboard = () => {
     return <Loader />;
   }
 
-  // Non-supervisor: Show graphwl graphs
   if (user.role !== "supervisor") {
     if (graphwlTopics.length === 0) {
       return (
@@ -226,13 +245,7 @@ const Dashboard = () => {
                   </header>
                   <select
                     value={timeRanges[item] || "24 hours"}
-                    onChange={(e) => {
-                      const newTimeRange = e.target.value;
-                      setTimeRanges((prev) => ({
-                        ...prev,
-                        [item]: newTimeRange,
-                      }));
-                    }}
+                    onChange={(e) => handleTimeRangeChange(item, e.target.value)}
                     style={{
                       padding: "6px 10px",
                       border: "1px solid #34495e",
@@ -325,13 +338,7 @@ const Dashboard = () => {
                 </header>
                 <select
                   value={timeRanges[item] || "24 hours"}
-                  onChange={(e) => {
-                    const newTimeRange = e.target.value;
-                    setTimeRanges((prev) => ({
-                      ...prev,
-                      [item]: newTimeRange,
-                    }));
-                  }}
+                  onChange={(e) => handleTimeRangeChange(item, e.target.value)}
                   style={{
                     padding: "6px 10px",
                     border: "1px solid #34495e",
@@ -341,10 +348,10 @@ const Dashboard = () => {
                     backgroundColor: "#2c3e50",
                     cursor: "pointer",
                     outline: "none",
-                    width:"100%",
+                    width: "100%",
                     marginTop: "8px",
                     marginBottom: "8px",
-                    textAlign:"center"
+                    textAlign: "center",
                   }}
                 >
                   <option value="24 hours">24 Hours</option>
