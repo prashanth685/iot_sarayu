@@ -283,7 +283,7 @@ const Dashboard = () => {
                   {isFft ? (
                     <StaticPlotGraph topic={item} height={290} dy={70} hidesteps={true} />
                   ) : (
-                    <SmallGraph topic={item} height={247} />
+                    <SmallGraph topic={item} height={window.innerWidth < 800 ? 195 : 243} viewgraph />
                   )}
                 </div>
               </div>
@@ -382,7 +382,7 @@ const Dashboard = () => {
                 {isFft ? (
                   <StaticPlotGraph topic={item} height={290} dy={70} hidesteps={true} />
                 ) : (
-                  <SmallGraph topic={item} height={243} viewgraph />
+                  <SmallGraph topic={item} height={window.innerWidth < 800 ? 195 : 243} viewgraph />
                 )}
               </div>
             </div>

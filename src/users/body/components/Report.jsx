@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { navHeaderContaxt } from "../../../contaxts/navHeaderContaxt";
 import ReactPaginate from "react-paginate";
 import "bootstrap/dist/css/bootstrap.min.css";
+import moment from "moment-timezone";
 
 const Report = () => {
   const navigate = useNavigate();
@@ -56,9 +57,7 @@ const Report = () => {
   }, [navHeader]);
 
   const normalizeTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    date.setMilliseconds(0);
-    return date.toISOString();
+    return moment(timestamp).tz("Asia/Kolkata").startOf("second").toISOString();
   };
 
   useEffect(() => {
@@ -200,11 +199,10 @@ const Report = () => {
           maxValue: maxValue ? Number(maxValue) : undefined,
         },
         {
-          responseType: "blob", // Important for handling binary data (CSV file)
+          responseType: "blob",
         }
       );
 
-      // Create a URL for the blob and trigger the download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       const currentTime = new Date()

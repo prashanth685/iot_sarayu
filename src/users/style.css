@@ -1,3 +1,4 @@
+
 /* historygraph style starts here */
 ._viewgraph_history_main_container {
     overflow: hidden;
@@ -1264,3 +1265,19 @@
     transition: width 0.5s ease;
   }
 /*updated report styles ends here*/
+
+
+
+@media (width < 800px) {
+    .alluser_dashboard_controles_container{
+        justify-content: center;
+    }
+    .alluser_dropdown_companyswitch_{
+        width: 100%;
+        padding: 0 15px;
+    }
+    .alluser_dropdown_companyswitch_ > select{
+        text-align: center;
+        width: 100% !important;
+    }
+}

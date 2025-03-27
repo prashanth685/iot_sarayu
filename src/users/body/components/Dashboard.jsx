@@ -202,10 +202,8 @@ const Dashboard = () => {
     const timestamp = timestamps[topic];
     if (!timestamp) return "-";
 
-    const lastUpdateUTC = new Date(timestamp);
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const lastUpdateIST = new Date(lastUpdateUTC.getTime() + istOffset);
-    const currentTimeIST = new Date(currentTime.getTime() + istOffset);
+    const lastUpdateIST = new Date(timestamp); // Timestamp is already in IST
+    const currentTimeIST = new Date(currentTime.getTime()); // Current time is also in IST
 
     const diffSeconds = Math.floor((currentTimeIST - lastUpdateIST) / 1000);
 
@@ -219,18 +217,18 @@ const Dashboard = () => {
     const timestamp = timestamps[topic];
     if (!timestamp) return "-";
 
-    const lastUpdateUTC = new Date(timestamp);
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const lastUpdateIST = new Date(lastUpdateUTC.getTime() + istOffset);
+    // Since the timestamp is already in IST, no offset is needed
+    const lastUpdateIST = new Date(timestamp);
 
+    // Format the date and time for Bangalore (IST)
     const day = String(lastUpdateIST.getDate()).padStart(2, "0");
-    const month = String(lastUpdateIST.getMonth() + 1).padStart(2, "0");
+    const month = String(lastUpdateIST.getMonth() + 1).padStart(2, "0"); // Months are 0-based
     const year = lastUpdateIST.getFullYear();
     const hours = String(lastUpdateIST.getHours()).padStart(2, "0");
     const minutes = String(lastUpdateIST.getMinutes()).padStart(2, "0");
     const seconds = String(lastUpdateIST.getSeconds()).padStart(2, "0");
 
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds} IST`;
   };
 
   const handleTimestampUpdate = useCallback((topic, timestamp) => {
@@ -245,9 +243,9 @@ const Dashboard = () => {
     try {
       const res = await apiClient.get(`/auth/${user.role}/${user.id}`);
       const userData = res?.data?.data;
-      console.log("Fetched user data:", userData);
       setLoggedInUser(userData);
       const employees = res?.data?.data?.employees || [];
+      console.log("Fetched user data:", employees);
       setEmployeesList(employees);
       dispatch(setUserDetails(userData));
       setFavoriteList(userData?.favorites || []);
@@ -454,7 +452,7 @@ const Dashboard = () => {
 
   return (
     <div className="allusers_dashboard_main_container">
-      <section style={{ marginTop: "15px", display: "flex", gap: "15px", alignItems: "center" }}>
+      <section className="alluser_dashboard_controles_container" style={{ marginTop: "15px", display: "flex", gap: "15px",flexWrap:"wrap", alignItems: "center" }}>
         <div
           style={{
             width: "350px",
@@ -497,7 +495,7 @@ const Dashboard = () => {
           </button>
         </div>
         {user?.role === "supervisor" && (
-          <div className="dropdown">
+          <div className="dropdown alluser_dropdown_companyswitch_">
             <select
               className="form-select"
               value={selectedEmployee?._id || ""}
@@ -523,7 +521,7 @@ const Dashboard = () => {
                 <th style={{ background: "red" }}>
                   Parameters
                 </th>
-                <th className="allusers_dashboard_live_data_th" style={{ background: "rgb(150, 2, 208)", transform: "translateY(1px)" }}>
+                <th className="allusers_dashboard_live_data_th" style={{ background: "rgb(150, 2, 208)",minWidth:"100px", transform: "translateY(1px)" }}>
                   Live
                 </th>
                 <th>Unit</th>
