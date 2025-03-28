@@ -148,7 +148,6 @@ const customStyles = `
   }
 `;
 
-// Inject the CSS into the document
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = customStyles;
@@ -173,7 +172,6 @@ const Dashboard = () => {
   const itemsPerPage = 9;
   const { setNavHeader } = useContext(navHeaderContaxt);
 
-  // State for the edit label modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [newLabel, setNewLabel] = useState("");
@@ -202,8 +200,8 @@ const Dashboard = () => {
     const timestamp = timestamps[topic];
     if (!timestamp) return "-";
 
-    const lastUpdateIST = new Date(timestamp); // Timestamp is already in IST
-    const currentTimeIST = new Date(currentTime.getTime()); // Current time is also in IST
+    const lastUpdateIST = new Date(timestamp);
+    const currentTimeIST = new Date(currentTime.getTime()); 
 
     const diffSeconds = Math.floor((currentTimeIST - lastUpdateIST) / 1000);
 
@@ -217,12 +215,10 @@ const Dashboard = () => {
     const timestamp = timestamps[topic];
     if (!timestamp) return "-";
 
-    // Since the timestamp is already in IST, no offset is needed
     const lastUpdateIST = new Date(timestamp);
 
-    // Format the date and time for Bangalore (IST)
     const day = String(lastUpdateIST.getDate()).padStart(2, "0");
-    const month = String(lastUpdateIST.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const month = String(lastUpdateIST.getMonth() + 1).padStart(2, "0");
     const year = lastUpdateIST.getFullYear();
     const hours = String(lastUpdateIST.getHours()).padStart(2, "0");
     const minutes = String(lastUpdateIST.getMinutes()).padStart(2, "0");
@@ -402,7 +398,6 @@ const Dashboard = () => {
 
   const pageCount = useMemo(() => Math.ceil(sortedParsedTopics.length / itemsPerPage), [sortedParsedTopics, itemsPerPage]);
 
-  // Function to open the edit label modal
   const openEditLabelModal = (topic) => {
     const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
     setSelectedTopic(matchedTopic);
@@ -410,14 +405,12 @@ const Dashboard = () => {
     setIsModalOpen(true);
   };
 
-  // Function to close the modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedTopic(null);
     setNewLabel("");
   };
 
-  // Function to handle label update
   const handleUpdateLabel = async () => {
     if (!newLabel.trim()) {
       toast.warning("Label cannot be empty");
@@ -434,7 +427,6 @@ const Dashboard = () => {
         updatedLabel: newLabel.trim(),
       });
 
-      // Update the local state to reflect the new label
       setAllTopicsWithLabels((prev) =>
         prev.map((item) =>
           item._id === selectedTopic._id ? { ...item, label: newLabel.trim() } : item
@@ -525,9 +517,9 @@ const Dashboard = () => {
                   Live
                 </th>
                 <th>Unit</th>
-                {/* <th>Relative</th> */}
+                <th>Relative</th>
                 <th>LastUpdatedAt</th>
-                <th>TodayMax</th>
+                <th style={{minWidth:"100px"}}>TodayMax</th>
                 <th>YesterdayMax</th>
                 <th>WeekMax</th>
                 <th>LayoutView</th>
@@ -551,7 +543,7 @@ const Dashboard = () => {
                   </td>
                   <LiveDataTd topic={topic} onTimestampUpdate={handleTimestampUpdate} />
                   <td>{unit}</td>
-                  {/* <td>{getRelativeTime(topic)}</td> */}
+                  <td>{getRelativeTime(topic)}</td>
                   <td>{getLastUpdatedAt(topic)}</td>
                   <TodayTd topic={topic} />
                   <YestardayTd topic={topic} />
@@ -565,13 +557,12 @@ const Dashboard = () => {
                     />
                   </td>
                   <td className="allusers_dashboard_graph_digital_td_">
-                    <button>
+                    <button onClick={() => navigate(`/allusers/editsinglegraph/${encodeURIComponent(topic)}`)}>
                       {!isFFT && (
                         <MdEdit
                           size={18}
                           style={{ cursor: "pointer" }}
                           className="icon"
-                          onClick={() => navigate(`/allusers/editsinglegraph/${encodeURIComponent(topic)}`)}
                         />
                       )}
                     </button>
