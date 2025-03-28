@@ -80,7 +80,7 @@ const LiveDataTd = ({ topic, onTimestampUpdate }) => {
   return isFFT ? (
     <td style={{ fontWeight: "bolder" }}>N/A</td>
   ) : (
-    <td style={{ fontWeight: "bolder", background: "#34495e",fontSize:"20px", color: "rgb(149, 255, 0)" }}>
+    <td style={{ fontWeight: "bolder",textShadow:"0px 0px 4px rgba(0, 0, 0, 0.97)", background: "#34495e",fontSize:"20px", color: "rgb(0, 255, 238)" }}>
       {liveMessage !== null ? liveMessage : "-"}
     </td>
   );

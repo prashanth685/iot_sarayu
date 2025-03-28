@@ -50,7 +50,7 @@ const ViewGraph = () => {
             hidesteps={false}
           />
         ) : (
-          <SmallGraph topic={topicparams} height={"610"} viewgraph={true} />
+          <SmallGraph topic={topicparams} height={window.innerWidth < 800 ? window.innerHeight - 160  : window.innerHeight - 230} viewgraph={true} />
         )}
       </div>
     </div>

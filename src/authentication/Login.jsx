@@ -82,6 +82,12 @@ const Login = () => {
     }
   };
 
+  const handleTwoFinalSubmit = (e) =>{
+    if(e.key === "Enter"){
+      handleSubmit()
+    }
+  }
+
   const handleSubmit = async () => {
     if (data?.password?.length < 8) {
       setError({
@@ -172,6 +178,7 @@ const Login = () => {
                     type="password"
                     id="password"
                     onChange={handleChange}
+                    onKeyDown={handleTwoFinalSubmit}
                     placeholder="Enter your Password"
                   />
                   {error?.password?.length > 0 && (

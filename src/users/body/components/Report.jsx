@@ -9,35 +9,60 @@ import { navHeaderContaxt } from "../../../contaxts/navHeaderContaxt";
 import ReactPaginate from "react-paginate";
 import "bootstrap/dist/css/bootstrap.min.css";
 import moment from "moment-timezone";
+import { useSelector } from "react-redux";
 
 const Report = () => {
   const navigate = useNavigate();
   const { navHeader } = useContext(navHeaderContaxt);
+  const { user } = useSelector((state) => state.userSlice);
 
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  const [fromDate, setFromDate] = useState(yesterday);
-  const [toDate, setToDate] = useState(today);
-  const [minValue, setMinValue] = useState("");
-  const [maxValue, setMaxValue] = useState("");
+  const [fromDate, setFromDate] = useState(yesterday); // Default remains
+  const [toDate, setToDate] = useState(today); // Default remains
+  const [minValue, setMinValue] = useState(""); // No default
+  const [maxValue, setMaxValue] = useState(""); // No default
   const [reportData, setReportData] = useState([]);
   const [mergedReportData, setMergedReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [companyTagnames, setCompanyTagnames] = useState([]);
   const [selectedTagnames, setSelectedTagnames] = useState([]);
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState(""); // No default
   const [allTopicsWithLabels, setAllTopicsWithLabels] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
-  const itemsPerPage = 1000;
+  const [limit, setLimit] = useState(""); // No default
+  const [aggregationMethod, setAggregationMethod] = useState(""); // No default
+  const [startTimeOfDay, setStartTimeOfDay] = useState(null); // New filter, no default
+  const [endTimeOfDay, setEndTimeOfDay] = useState(null); // New filter, no default
+  const itemsPerPage = limit || 1000; // Fallback to 1000 if limit is not set
 
   useEffect(() => {
     fetchAllTopicsLabels();
-  }, []);
+    if (user.role !== "supervisor") {
+      fetchPerticularUser();
+    }
+  }, [user.id, user.role]);
+
+  const fetchPerticularUser = async () => {
+    try {
+      const res = await apiClient.get(`/auth/employee/${user?.id}`);
+      const userTopics = res.data.data.topics || [];
+      console.log("Non-supervisor topics:", userTopics);
+      if (userTopics.length > 0) {
+        setCompanyTagnames(userTopics);
+      } else {
+        toast.error("No topics assigned to this user.");
+      }
+    } catch (error) {
+      console.error("Error fetching user topics:", error.message);
+      toast.error("Failed to fetch user topics. Please try again.");
+    }
+  };
 
   const fetchAllTopicsLabels = async () => {
     try {
@@ -49,12 +74,12 @@ const Report = () => {
   };
 
   useEffect(() => {
-    if (navHeader?.topics?.length > 0) {
+    if (user.role === "supervisor" && navHeader?.topics?.length > 0) {
       setCompanyTagnames(navHeader.topics);
-    } else {
-      toast.error("No topics available in navHeader");
+    } else if (user.role === "supervisor" && (!navHeader?.topics || navHeader.topics.length === 0)) {
+      toast.error("No topics available in navHeader for supervisor");
     }
-  }, [navHeader]);
+  }, [navHeader, user.role]);
 
   const normalizeTimestamp = (timestamp) => {
     return moment(timestamp).tz("Asia/Kolkata").startOf("second").toISOString();
@@ -62,10 +87,6 @@ const Report = () => {
 
   useEffect(() => {
     if (reportData.length > 0) {
-      // console.log("Processing reportData into mergedReportData...");
-      // console.log("reportData length:", reportData.length);
-      // console.log("selectedTagnames:", selectedTagnames);
-
       const mergedData = [];
       const timestampMap = new Map();
 
@@ -89,10 +110,9 @@ const Report = () => {
         });
       });
 
-      mergedData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      // Default sorting by timestamp descending (no user option)
+      mergedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       setMergedReportData(mergedData);
-
-      // console.log("Merged Report Data length:", mergedData.length);
     } else {
       setMergedReportData([]);
     }
@@ -122,29 +142,22 @@ const Report = () => {
     }, 500);
 
     try {
-      console.log("Submitting report request with:", {
+      const payload = {
         topics: selectedTagnames,
         from: fromDate.toISOString(),
         to: toDate.toISOString(),
-        filterType,
+        filterType: filterType || undefined,
         minValue: minValue ? Number(minValue) : undefined,
         maxValue: maxValue ? Number(maxValue) : undefined,
         page,
-        limit: itemsPerPage,
-      });
+        limit: limit ? Number(limit) : undefined,
+        aggregationMethod: aggregationMethod || undefined,
+        startTimeOfDay: startTimeOfDay ? startTimeOfDay.toISOString() : undefined,
+        endTimeOfDay: endTimeOfDay ? endTimeOfDay.toISOString() : undefined,
+      };
+      console.log("Submitting report request with:", payload);
 
-      const response = await apiClient.post("/mqtt/report-filter", {
-        topics: selectedTagnames,
-        from: fromDate.toISOString(),
-        to: toDate.toISOString(),
-        filterType,
-        minValue: minValue ? Number(minValue) : undefined,
-        maxValue: maxValue ? Number(maxValue) : undefined,
-        page,
-        limit: itemsPerPage,
-      });
-
-      // console.log("API Response:", response.data);
+      const response = await apiClient.post("/mqtt/report-filter", payload);
 
       clearInterval(progressInterval);
       setLoadingProgress(100);
@@ -194,9 +207,12 @@ const Report = () => {
           topics: selectedTagnames,
           from: fromDate.toISOString(),
           to: toDate.toISOString(),
-          filterType,
+          filterType: filterType || undefined,
           minValue: minValue ? Number(minValue) : undefined,
           maxValue: maxValue ? Number(maxValue) : undefined,
+          aggregationMethod: aggregationMethod || undefined,
+          startTimeOfDay: startTimeOfDay ? startTimeOfDay.toISOString() : undefined,
+          endTimeOfDay: endTimeOfDay ? endTimeOfDay.toISOString() : undefined,
         },
         {
           responseType: "blob",
@@ -224,13 +240,12 @@ const Report = () => {
     }
   };
 
-  const getLabel = (tag) => {
+  const getLabelWithUnit = (tag) => {
     const topic = typeof tag === "string" ? tag : tag.topic;
     const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
-    if (matchedTopic) {
-      return matchedTopic.label;
-    }
-    return topic.split("|")[0].split("/")[2] || topic;
+    const label = matchedTopic ? matchedTopic.label : topic.split("|")[0].split("/")[2] || topic;
+    const unit = topic.split("|")[1] || "";
+    return `${label}(${unit})`;
   };
 
   return (
@@ -266,6 +281,7 @@ const Report = () => {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="_report_dropdown"
               >
+                <option value="">Select Filter Type</option>
                 <option value="all">All Values</option>
                 <option value="minPerDay">Min Value Per Day</option>
                 <option value="maxPerDay">Max Value Per Day</option>
@@ -297,7 +313,62 @@ const Report = () => {
               </div>
             </div>
           )}
-          <div className="_report_tagname_selector">
+          <div className="_report_additional_filters" style={{ display: "flex", gap: "20px", marginTop: "10px" }}>
+            <div className="_report_datepicker_wrapper">
+              <label className="_report_label">Start Time of Day</label>
+              <DatePicker
+                selected={startTimeOfDay}
+                onChange={(date) => setStartTimeOfDay(date)}
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="HH:mm"
+                className="_report_datepicker"
+                placeholderText="Select Start Time"
+              />
+            </div>
+            <div className="_report_datepicker_wrapper">
+              <label className="_report_label">End Time of Day</label>
+              <DatePicker
+                selected={endTimeOfDay}
+                onChange={(date) => setEndTimeOfDay(date)}
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="HH:mm"
+                className="_report_datepicker"
+                placeholderText="Select End Time"
+              />
+            </div>
+            <div className="_report_input_group">
+              <label className="_report_label">Limit (Records)</label>
+              <input
+                type="number"
+                value={limit}
+                onChange={(e) => setLimit(Math.max(1, e.target.value))}
+                placeholder="Limit"
+                className="_report_number_input"
+                min="1"
+              />
+            </div>
+            <div className="_report_filter_selector">
+              <label className="_report_label">Aggregation</label>
+              <select
+                value={aggregationMethod}
+                onChange={(e) => setAggregationMethod(e.target.value)}
+                className="_report_dropdown"
+              >
+                <option value="">Select Aggregation</option>
+                <option value="average">Average</option>
+                <option value="sum">Sum</option>
+                <option value="min">Minimum</option>
+                <option value="max">Maximum</option>
+              </select>
+            </div>
+          </div>
+          <div className="_report_tagname_selector mt-3">
             <label className="_report_label">Select Tagnames</label>
             {companyTagnames.length === 0 ? (
               <div className="_report_loading_indicator" style={{ textAlign: "center", padding: "10px" }}>
@@ -307,7 +378,7 @@ const Report = () => {
               <div className="_report_tagname_list">
                 {companyTagnames.map((tag) => {
                   const topic = typeof tag === "string" ? tag : tag.topic;
-                  const label = getLabel(tag);
+                  const label = getLabelWithUnit(tag);
                   return (
                     <div key={topic} className="_report_tagname_card">
                       <input
@@ -351,7 +422,7 @@ const Report = () => {
                     <th>Row # [{totalRecords}]</th>
                     <th>Timestamp</th>
                     {selectedTagnames.map((tag) => (
-                      <th key={tag}>{getLabel(tag)}</th>
+                      <th key={tag}>{getLabelWithUnit(tag)}</th>
                     ))}
                   </tr>
                 </thead>

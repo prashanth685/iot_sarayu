@@ -18,7 +18,7 @@ import { HiMiniBuildingOffice } from "react-icons/hi2";
 import { FaUser } from "react-icons/fa";
 import { navHeaderContaxt } from "../../contaxts/navHeaderContaxt";
 import { BsFillInfoCircleFill } from "react-icons/bs";
-import CompanyLogo from './sarayu_logo_1.jpg'
+import CompanyLogo from './sarayu_logo_1.jpg';
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.userSlice);
@@ -77,15 +77,14 @@ const Navbar = () => {
       <div className="users_navbar_separate_container">
         <div className="users_navbar_separate_first_div">
           <div>
-            <img
-              src={CompanyLogo}
-              alt="company logo"
-            />
+            <img src={CompanyLogo} alt="company logo" />
           </div>
         </div>
         <div className="users_navbar_separate_second_div">
           <p>{navHeader?.headerOne}</p>
-          <p style={{height:"25px",display:"flex",justifyContent:"center",alignItems:"center"}}>{navHeader?.headerTwo?.length > 75 ? navHeader?.headerTwo.slice(0,75)+"...." : navHeader?.headerTwo}</p>
+          <p style={{ height: "25px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            {navHeader?.headerTwo?.length > 75 ? navHeader?.headerTwo.slice(0, 75) + "...." : navHeader?.headerTwo}
+          </p>
           <p>
             <span>{formattedDate}</span>
             <span>{formattedTime}</span>
@@ -186,29 +185,24 @@ const Navbar = () => {
               to={"/allusers/dashboard"}
               onClick={() => dispatch(handlToggleMenu(false))}
             >
-              Dashbaord
+              Dashboard
             </NavLink>
             <NavLink
               className={"users_mobile_navbar_show_menu_navlink"}
               to={"/allusers/graphs"}
               onClick={() => dispatch(handlToggleMenu(false))}
             >
-              Graphs[WL]
+              Graphs
             </NavLink>
-            <NavLink
-              className={"users_mobile_navbar_show_menu_navlink"}
-              to={"/allusers/dualtopicdashboard"}
-              onClick={() => dispatch(handlToggleMenu(false))}
-            >
-              MultiGraphPlot
-            </NavLink>
-            <NavLink
-              className={"users_mobile_navbar_show_menu_navlink"}
-              to={"/allusers/favorites"}
-              onClick={() => dispatch(handlToggleMenu(false))}
-            >
-              Watch list
-            </NavLink>
+            {user?.role !== "supervisor" && (
+              <NavLink
+                className={"users_mobile_navbar_show_menu_navlink"}
+                to={"/allusers/favorites"}
+                onClick={() => dispatch(handlToggleMenu(false))}
+              >
+                Watch list
+              </NavLink>
+            )}
             <NavLink
               className={"users_mobile_navbar_show_menu_navlink"}
               to={"/allusers/digitalmeter"}
@@ -216,33 +210,37 @@ const Navbar = () => {
             >
               Digital meter
             </NavLink>
-            {user?.role !== "employee" && (
+            <NavLink
+              className={"users_mobile_navbar_show_menu_navlink"}
+              to={"/allusers/report"}
+              onClick={() => dispatch(handlToggleMenu(false))}
+            >
+              Report
+            </NavLink>
+            {user.role === "supervisor" && (
               <NavLink
                 className={"users_mobile_navbar_show_menu_navlink"}
                 to={"/allusers/users"}
                 onClick={() => dispatch(handlToggleMenu(false))}
               >
-                Operators
-              </NavLink>
-            )}
-            {user?.role === "manager" && (
-              <NavLink
-                className={"users_mobile_navbar_show_menu_navlink"}
-                to={"/allusers/supervisors"}
-                onClick={() => dispatch(handlToggleMenu(false))}
-              >
-                Supervisors
+                Users
               </NavLink>
             )}
             <Link
               className={"users_mobile_navbar_show_menu_navlink"}
-              onClick={() => setChangePasswordModel(true)}
+              onClick={() => {
+                setChangePasswordModel(true);
+                dispatch(handlToggleMenu(false));
+              }}
             >
               Change password
             </Link>
             <div
               className="users_mobile_navbar_show_menu_logout_container"
-              onClick={() => dispatch(handleWarningModel())}
+              onClick={() => {
+                dispatch(handleWarningModel());
+                dispatch(handlToggleMenu(false));
+              }}
             >
               <button>
                 <IoIosLogOut /> Logout

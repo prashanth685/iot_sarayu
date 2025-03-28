@@ -270,7 +270,6 @@ const SmallGraph = ({ topic, height, viewgraph }) => {
     }
   }, [thresholds]);
 
-  // Handle socket connection and live data
   useEffect(() => {
     socket.current = io("http://13.203.94.55:4000", {
       path: "/socket.io/",
@@ -281,6 +280,16 @@ const SmallGraph = ({ topic, height, viewgraph }) => {
       reconnectionDelay: 5000,
       upgrade: false, 
     });
+
+    // socket.current = io("http://localhost:4000", {
+    //   path: "/socket.io/",
+    //   transports: ["websocket"],
+    //   secure: true,
+    //   reconnection: true,
+    //   reconnectionAttempts: 5,
+    //   reconnectionDelay: 5000,
+    //   upgrade: false, 
+    // });
 
     socket.current.emit("subscribeToTopic", topic);
 

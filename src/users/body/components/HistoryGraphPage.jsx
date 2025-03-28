@@ -41,7 +41,7 @@ const HistoryGraphPage = () => {
         </div>
       </header>
       <section className="_historygraph_page_content">
-        <HistoryGraph topic={topicparams} height={"470"} />
+        <HistoryGraph topic={topicparams} topicLabel={topicLabel} height={"470"} />
       </section>
     </div>
   );

@@ -105,7 +105,7 @@ const AllOperators = () => {
                   textAlign: "center",
                 }}
               >
-                Employee No
+                Row
               </th>
               <th
                 style={{
@@ -141,7 +141,7 @@ const AllOperators = () => {
                   textAlign: "center",
                 }}
               >
-                Company Name
+                CompanyName
               </th>
               <th
                 style={{

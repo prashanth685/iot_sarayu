@@ -7,7 +7,7 @@ import "../../components/HistoryGraphPage.css";
 import { toZonedTime } from "date-fns-tz";
 import { parseISO } from "date-fns";
 
-const HistoryGraph = ({ topic, height }) => {
+const HistoryGraph = ({ topic, height , topicLabel }) => {
   const chartContainerRef = useRef();
   const chartRef = useRef(null);
   const areaSeriesRef = useRef(null);
@@ -173,7 +173,7 @@ const HistoryGraph = ({ topic, height }) => {
     const csvContent = headers + rows;
 
     const currentTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const fileName = `${topic}_${currentTimestamp}.csv`;
+    const fileName = `${topicLabel}_${currentTimestamp}.csv`;
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");

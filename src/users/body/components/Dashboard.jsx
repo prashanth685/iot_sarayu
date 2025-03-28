@@ -411,9 +411,20 @@ const Dashboard = () => {
     setNewLabel("");
   };
 
+  const handleButtonOkUpdateLabel = (e) =>{
+    if(e.key === "Enter"){
+      handleUpdateLabel()
+    }
+  }
+
   const handleUpdateLabel = async () => {
     if (!newLabel.trim()) {
       toast.warning("Label cannot be empty");
+      return;
+    }
+
+    if (newLabel.trim().length > 30) {
+      toast.warning("Label cannot exceed 30 characters");
       return;
     }
 
@@ -666,14 +677,16 @@ const Dashboard = () => {
                 className="custom-edit-label-modal-input"
               />
               <label className="custom-edit-label-modal-label" style={{ marginTop: "12px" }}>
-                New Label:
+                New Label (max 30 chars):
               </label>
               <input
                 type="text"
                 value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
+                onChange={(e) => setNewLabel(e.target.value.slice(0, 30))}
                 className="custom-edit-label-modal-input"
-                placeholder="Enter new label"
+                placeholder="Enter new label (max 30 chars)"
+                maxLength={30}
+                onKeyDown={handleButtonOkUpdateLabel}
               />
             </div>
             <div className="custom-edit-label-modal-footer">
