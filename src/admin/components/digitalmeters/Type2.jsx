@@ -17,7 +17,7 @@ const Type2 = ({
   const [liveData, setLiveData] = useState(0);
 
   useEffect(() => {
-    const socket = io("http://13.203.94.55:4000", {
+    const socket = io("http://13.127.36.85:4000", {
       path: "/socket.io/",
       transports: ["websocket"],
       secure: true,

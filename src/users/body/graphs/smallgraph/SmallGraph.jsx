@@ -271,7 +271,7 @@ const SmallGraph = ({ topic, height, viewgraph }) => {
   }, [thresholds]);
 
   useEffect(() => {
-    socket.current = io("http://13.203.94.55:4000", {
+    socket.current = io("http://13.127.36.85:4000", {
       path: "/socket.io/",
       transports: ["websocket"],
       secure: true,

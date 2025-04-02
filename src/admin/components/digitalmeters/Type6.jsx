@@ -5,7 +5,7 @@ const Type6 = ({ topic, minValue = 0, maxValue = 100, unit = "", label = "n/a" }
   const [value, setValue] = useState(minValue);
 
   useEffect(() => {
-    const socket = io("http://13.203.94.55:4000", {
+    const socket = io("http://13.127.36.85:4000", {
       path: "/socket.io/",
       transports: ["websocket"],
       secure: true,
