@@ -30,7 +30,7 @@ const Navbar = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [changePasswordModel, setChangePasswordModel] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [toggleDetails, setToggleDetails] = useState(false); // Added for hover effect
+  const [toggleDetails, setToggleDetails] = useState(false);
   const { navHeader } = useContext(navHeaderContaxt);
 
   useEffect(() => {
@@ -39,12 +39,10 @@ const Navbar = () => {
     }
   }, [user.id]);
 
-  // Add useEffect for updating date and time
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 1000); // Update every second
-
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -70,6 +68,12 @@ const Navbar = () => {
       toast.error(error?.response?.data?.error);
       setLocalLoading(false);
     }
+  };
+
+  // Function to truncate text if longer than 15 characters
+  const truncateText = (text) => {
+    if (!text) return "";
+    return text.length > 15 ? `${text.slice(0, 15)}...` : text;
   };
 
   return (
@@ -165,7 +169,12 @@ const Navbar = () => {
       </div>
       <div className="users_mobile_navbar_container">
         <div className="users_mobile_navbar_left">
-          <PiBuildingOfficeBold /> {loggedInUser?.company?.name}
+          <PiBuildingOfficeBold />{" "}
+          {truncateText(
+            loggedInUser?.role === "supervisor" 
+              ? loggedInUser?.company?.name 
+              : navHeader?.headerOne
+          )}
         </div>
         <div
           className="users_mobile_navbar_right"
