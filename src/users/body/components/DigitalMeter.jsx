@@ -71,9 +71,9 @@ const DigitalMeter = () => {
     setCurrentPage(selected);
   };
 
-  // Determine the source of digital meters and topics based on role
+  // Determine the source of digital meters and topics based on role, filtering out backup topics
   const digitalMeters = user.role === "supervisor" ? navHeader?.assignedDigitalMeters || [] : topicBasedDigitalMeter;
-  const topics = user.role === "supervisor" ? navHeader?.topics || [] : assignedTopicList;
+  const topics = user.role === "supervisor" ? navHeader?.topics?.filter((topic) => !topic.endsWith("|backup")) || [] : assignedTopicList?.filter((topic) => !topic.endsWith("|backup")) || [];
 
   // Filter topics to only those with assigned digital meters
   const filteredTopics = topics.filter((topic) =>

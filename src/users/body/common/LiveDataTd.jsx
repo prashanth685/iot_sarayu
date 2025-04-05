@@ -16,16 +16,6 @@ const getCachedSocket = (topic) => {
       upgrade: false, 
     });
 
-    // const newSocket = io("http://localhost:4000", {
-    //   path: "/socket.io/",
-    //   transports: ["websocket"],
-    //   secure: true,
-    //   reconnection: true,
-    //   reconnectionAttempts: 5,
-    //   reconnectionDelay: 5000,
-    //   upgrade: false, 
-    // });
-
     newSocket.on("connect", () => console.log(`Socket connected for ${topic}`));
     newSocket.on("connect_error", (err) => console.error(`Connection error for ${topic}:`, err));
 

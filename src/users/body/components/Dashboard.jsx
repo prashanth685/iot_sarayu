@@ -201,14 +201,23 @@ const Dashboard = () => {
     if (!timestamp) return "-";
 
     const lastUpdateIST = new Date(timestamp);
-    const currentTimeIST = new Date(currentTime.getTime()); 
+    const currentTimeIST = new Date(currentTime.getTime());
 
     const diffSeconds = Math.floor((currentTimeIST - lastUpdateIST) / 1000);
-
     const displaySeconds = Math.max(0, diffSeconds);
-    if (displaySeconds < 60) return `${displaySeconds}s ago`;
-    const minutes = Math.floor(displaySeconds / 60);
-    return `${minutes}m ago`;
+
+    const days = Math.floor(displaySeconds / (24 * 3600));
+    const hours = Math.floor((displaySeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((displaySeconds % 3600) / 60);
+    const seconds = displaySeconds % 60;
+
+    let relativeTime = "";
+    if (days > 0) relativeTime += `${days}d `;
+    if (hours > 0 || days > 0) relativeTime += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) relativeTime += `${minutes}m `;
+    if (days === 0 && hours === 0 && minutes === 0) relativeTime += `${seconds}s `;
+
+    return relativeTime.trim() + "ago";
   };
 
   const getLastUpdatedAt = (topic) => {
@@ -350,21 +359,23 @@ const Dashboard = () => {
 
   const parsedTopics = useMemo(() => {
     const topicsToParse = user.role === "supervisor" && selectedEmployee ? selectedEmployee.topics : loggedInUser?.topics;
-    return topicsToParse?.map((topic) => {
-      const [path, unit] = topic.split("|");
-      const tagName = path.split("/")[2];
-      const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
-      const label = matchedTopic ? matchedTopic.label : tagName;
-      return {
-        topic,
-        tagName: label,
-        unit: unit || "-",
-        isFFT: unit === "fft",
-        weekMax: Math.random() * 100,
-        yesterdayMax: Math.random() * 100,
-        todayMax: Math.random() * 100,
-      };
-    }) || [];
+    return topicsToParse
+      ?.filter((topic) => !topic.endsWith("|backup")) // Exclude topics ending with "|backup"
+      .map((topic) => {
+        const [path, unit] = topic.split("|");
+        const tagName = path.split("/")[2];
+        const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
+        const label = matchedTopic ? matchedTopic.label : tagName;
+        return {
+          topic,
+          tagName: label,
+          unit: unit || "-",
+          isFFT: unit === "fft",
+          weekMax: Math.random() * 100,
+          yesterdayMax: Math.random() * 100,
+          todayMax: Math.random() * 100,
+        };
+      }) || [];
   }, [loggedInUser?.topics, selectedEmployee, user.role, allTopicsWithLabels]);
 
   const filteredParsedTopics = useMemo(() => {
@@ -411,11 +422,11 @@ const Dashboard = () => {
     setNewLabel("");
   };
 
-  const handleButtonOkUpdateLabel = (e) =>{
-    if(e.key === "Enter"){
-      handleUpdateLabel()
+  const handleButtonOkUpdateLabel = (e) => {
+    if (e.key === "Enter") {
+      handleUpdateLabel();
     }
-  }
+  };
 
   const handleUpdateLabel = async () => {
     if (!newLabel.trim()) {
@@ -455,7 +466,7 @@ const Dashboard = () => {
 
   return (
     <div className="allusers_dashboard_main_container">
-      <section className="alluser_dashboard_controles_container" style={{ marginTop: "15px", display: "flex", gap: "15px",flexWrap:"wrap", alignItems: "center" }}>
+      <section className="alluser_dashboard_controles_container" style={{ marginTop: "15px", display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
         <div
           style={{
             width: "350px",
@@ -524,13 +535,13 @@ const Dashboard = () => {
                 <th style={{ background: "red" }}>
                   Parameters
                 </th>
-                <th className="allusers_dashboard_live_data_th" style={{ background: "rgb(150, 2, 208)",minWidth:"100px", transform: "translateY(1px)" }}>
+                <th className="allusers_dashboard_live_data_th" style={{ background: "rgb(150, 2, 208)", minWidth: "100px", transform: "translateY(1px)" }}>
                   Live
                 </th>
                 <th>Unit</th>
                 <th>Relative</th>
                 <th>LastUpdatedAt</th>
-                <th style={{minWidth:"100px"}}>TodayMax</th>
+                <th style={{ minWidth: "100px" }}>TodayMax</th>
                 <th>YesterdayMax</th>
                 <th>WeekMax</th>
                 <th>LayoutView</th>

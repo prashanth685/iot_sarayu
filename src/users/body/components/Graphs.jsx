@@ -147,9 +147,9 @@ const Dashboard = () => {
   useEffect(() => {
     const topics =
       user.role === "supervisor" && navHeader?.topics?.length > 0
-        ? navHeader.topics
+        ? navHeader.topics.filter((topic) => !topic.endsWith("|backup")) // Filter out backup topics
         : loggedInUser?.graphwl?.length > 0
-        ? loggedInUser.graphwl
+        ? loggedInUser.graphwl.filter((topic) => !topic.endsWith("|backup")) // Filter out backup topics
         : [];
 
     if (topics.length > 0) {
@@ -192,14 +192,14 @@ const Dashboard = () => {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
 
-  const supervisorTopics = navHeader?.topics || [];
+  const supervisorTopics = navHeader?.topics?.filter((topic) => !topic.endsWith("|backup")) || [];
   const pageCount = Math.ceil(supervisorTopics.length / itemsPerPage);
   const currentSupervisorTopics = supervisorTopics.slice(
     currentPage * itemsPerPage,
     (currentPage + 1) * itemsPerPage
   );
 
-  const graphwlTopics = loggedInUser?.graphwl || [];
+  const graphwlTopics = loggedInUser?.graphwl?.filter((topic) => !topic.endsWith("|backup")) || [];
 
   const getTopicLabel = (topic) => {
     const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
