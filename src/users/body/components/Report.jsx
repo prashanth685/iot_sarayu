@@ -30,8 +30,6 @@ const Report = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [companyTagnames, setCompanyTagnames] = useState([]);
   const [selectedTagnames, setSelectedTagnames] = useState([]);
-  const [backupTopics, setBackupTopics] = useState([]);
-  const [selectedBackupTopics, setSelectedBackupTopics] = useState([]);
   const [filterType, setFilterType] = useState(""); // No default
   const [allTopicsWithLabels, setAllTopicsWithLabels] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -55,15 +53,10 @@ const Report = () => {
       const res = await apiClient.get(`/auth/employee/${user?.id}`);
       const userTopics = res.data.data.topics || [];
       console.log("Non-supervisor topics:", userTopics);
-      const regularTopics = userTopics.filter((topic) => !topic.endsWith("|backup"));
-      const backupTops = userTopics.filter((topic) => topic.endsWith("|backup"));
-      if (regularTopics.length > 0) {
-        setCompanyTagnames(regularTopics);
+      if (userTopics.length > 0) {
+        setCompanyTagnames(userTopics);
       } else {
-        toast.error("No regular topics assigned to this user.");
-      }
-      if (backupTops.length > 0) {
-        setBackupTopics(backupTops);
+        toast.error("No topics assigned to this user.");
       }
     } catch (error) {
       console.error("Error fetching user topics:", error.message);
@@ -82,10 +75,7 @@ const Report = () => {
 
   useEffect(() => {
     if (user.role === "supervisor" && navHeader?.topics?.length > 0) {
-      const regularTopics = navHeader.topics.filter((topic) => !topic.endsWith("|backup"));
-      const backupTops = navHeader.topics.filter((topic) => topic.endsWith("|backup"));
-      setCompanyTagnames(regularTopics);
-      setBackupTopics(backupTops);
+      setCompanyTagnames(navHeader.topics);
     } else if (user.role === "supervisor" && (!navHeader?.topics || navHeader.topics.length === 0)) {
       toast.error("No topics available in navHeader for supervisor");
     }
@@ -106,7 +96,7 @@ const Report = () => {
 
         if (!existingRow) {
           existingRow = { timestamp: row.timestamp };
-          (selectedTagnames.length > 0 ? selectedTagnames : selectedBackupTopics).forEach((tag) => {
+          selectedTagnames.forEach((tag) => {
             existingRow[tag] = "N/A";
           });
           timestampMap.set(normalizedTimestamp, existingRow);
@@ -114,7 +104,7 @@ const Report = () => {
         }
 
         Object.keys(row).forEach((key) => {
-          if (key !== "timestamp" && (selectedTagnames.includes(key) || selectedBackupTopics.includes(key)) && row[key] !== undefined && row[key] !== null) {
+          if (key !== "timestamp" && selectedTagnames.includes(key) && row[key] !== undefined && row[key] !== null) {
             existingRow[key] = row[key];
           }
         });
@@ -126,13 +116,9 @@ const Report = () => {
     } else {
       setMergedReportData([]);
     }
-  }, [reportData, selectedTagnames, selectedBackupTopics]);
+  }, [reportData, selectedTagnames]);
 
   const handleTagnameToggle = (tagname) => {
-    if (selectedBackupTopics.length > 0) {
-      toast.warning("Cannot select tagnames when backup topics are selected.");
-      return;
-    }
     setSelectedTagnames((prev) => {
       const newSelection = prev.includes(tagname)
         ? prev.filter((t) => t !== tagname)
@@ -142,23 +128,9 @@ const Report = () => {
     });
   };
 
-  const handleBackupToggle = (backupTopic) => {
-    if (selectedTagnames.length > 0) {
-      toast.warning("Cannot select backup topics when tagnames are selected.");
-      return;
-    }
-    setSelectedBackupTopics((prev) => {
-      const newSelection = prev.includes(backupTopic)
-        ? prev.filter((t) => t !== backupTopic)
-        : [...prev, backupTopic];
-      setReportData([]);
-      return newSelection;
-    });
-  };
-
   const handleSubmit = async (page = 1) => {
-    if (!fromDate || !toDate || (selectedTagnames.length === 0 && selectedBackupTopics.length === 0)) {
-      toast.warning("Please select date range and at least one tagname or backup topic");
+    if (!fromDate || !toDate || selectedTagnames.length === 0) {
+      toast.warning("Please select date range and at least one tagname");
       return;
     }
 
@@ -171,7 +143,7 @@ const Report = () => {
 
     try {
       const payload = {
-        topics: selectedTagnames.length > 0 ? selectedTagnames : selectedBackupTopics,
+        topics: selectedTagnames,
         from: fromDate.toISOString(),
         to: toDate.toISOString(),
         filterType: filterType || undefined,
@@ -183,26 +155,9 @@ const Report = () => {
         startTimeOfDay: startTimeOfDay ? startTimeOfDay.toISOString() : undefined,
         endTimeOfDay: endTimeOfDay ? endTimeOfDay.toISOString() : undefined,
       };
-      console.log("Submitting report request with payload:", payload);
+      console.log("Submitting report request with:", payload);
 
-      // Explicitly determine endpoint based on selected topics
-      let endpoint;
-      if (selectedBackupTopics.length > 0) {
-        if (selectedTagnames.length > 0) {
-          toast.error("Cannot mix regular tagnames with backup topics. Please select only one type.");
-          return;
-        }
-        endpoint = "/mqtt/report-filter-backup";
-        console.log("Using backup endpoint:", endpoint);
-      } else if (selectedTagnames.length > 0) {
-        endpoint = "/mqtt/report-filter";
-        console.log("Using regular endpoint:", endpoint);
-      } else {
-        toast.error("No valid topics selected for submission.");
-        return;
-      }
-
-      const response = await apiClient.post(endpoint, payload);
+      const response = await apiClient.post("/mqtt/report-filter", payload);
 
       clearInterval(progressInterval);
       setLoadingProgress(100);
@@ -247,9 +202,9 @@ const Report = () => {
     try {
       toast.info("Generating CSV file, please wait...");
       const response = await apiClient.post(
-        selectedBackupTopics.length > 0 ? "/mqtt/report-filter-backup-csv" : "/mqtt/report-filter-csv",
+        "/mqtt/report-filter-csv",
         {
-          topics: selectedTagnames.length > 0 ? selectedTagnames : selectedBackupTopics,
+          topics: selectedTagnames,
           from: fromDate.toISOString(),
           to: toDate.toISOString(),
           filterType: filterType || undefined,
@@ -431,34 +386,6 @@ const Report = () => {
                         checked={selectedTagnames.includes(topic)}
                         onChange={() => handleTagnameToggle(topic)}
                         className="_report_checkbox"
-                        disabled={selectedBackupTopics.length > 0}
-                      />
-                      <span className="_report_tagname_text">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div className="_report_tagname_selector mt-3">
-            <label className="_report_label">Select Backup</label>
-            {backupTopics.length === 0 ? (
-              <div className="_report_loading_indicator" style={{ textAlign: "center", padding: "10px" }}>
-                <span>No backup topics available</span>
-              </div>
-            ) : (
-              <div className="_report_tagname_list">
-                {backupTopics.map((tag) => {
-                  const topic = typeof tag === "string" ? tag : tag.topic;
-                  const label = getLabelWithUnit(tag);
-                  return (
-                    <div key={topic} className="_report_tagname_card">
-                      <input
-                        type="checkbox"
-                        checked={selectedBackupTopics.includes(topic)}
-                        onChange={() => handleBackupToggle(topic)}
-                        className="_report_checkbox"
-                        disabled={selectedTagnames.length > 0}
                       />
                       <span className="_report_tagname_text">{label}</span>
                     </div>
@@ -494,7 +421,7 @@ const Report = () => {
                   <tr>
                     <th>Row # [{totalRecords}]</th>
                     <th>Timestamp</th>
-                    {(selectedTagnames.length > 0 ? selectedTagnames : selectedBackupTopics).map((tag) => (
+                    {selectedTagnames.map((tag) => (
                       <th key={tag}>{getLabelWithUnit(tag)}</th>
                     ))}
                   </tr>
@@ -505,7 +432,7 @@ const Report = () => {
                       <tr key={row.timestamp}>
                         <td>{(currentPage * itemsPerPage) + index + 1}</td>
                         <td>{new Date(row.timestamp).toLocaleString()}</td>
-                        {(selectedTagnames.length > 0 ? selectedTagnames : selectedBackupTopics).map((tag) => (
+                        {selectedTagnames.map((tag) => (
                           <td key={tag}>{row[tag] || "N/A"}</td>
                         ))}
                       </tr>
@@ -513,10 +440,10 @@ const Report = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan={(selectedTagnames.length > 0 ? selectedTagnames.length : selectedBackupTopics.length) + 2}
+                        colSpan={selectedTagnames.length + 2}
                         style={{ textAlign: "center", background: "#f1c404" }}
                       >
-                        No data available. Select tagnames or backup topics and submit.
+                        No data available. Select tagnames and submit.
                       </td>
                     </tr>
                   )}
