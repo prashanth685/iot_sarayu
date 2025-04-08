@@ -6,18 +6,20 @@ import apiClient from "../../../../api/apiClient";
 import "../../components/HistoryGraphPage.css";
 import { toZonedTime } from "date-fns-tz";
 import { parseISO } from "date-fns";
+import './style.css'
 
-const HistoryGraph = ({ topic, height , topicLabel }) => {
+const HistoryGraph = ({ topic, height, topicLabel }) => {
   const chartContainerRef = useRef();
   const chartRef = useRef(null);
   const areaSeriesRef = useRef(null);
   const thresholdLineSeriesRefs = useRef([]);
-  const [graphData, setGraphData] = useState([]); 
+  const [graphData, setGraphData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // New loading state
 
   const [fromDate, setFromDate] = useState(() => {
     const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1); 
-    yesterday.setHours(0, 0, 0, 0); 
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
     return toZonedTime(yesterday, "Asia/Kolkata");
   });
   const [toDate, setToDate] = useState(() => {
@@ -82,6 +84,7 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
   }, [height]);
 
   const fetchGraphData = async () => {
+    setIsLoading(true); // Start loading
     try {
       const adjustedFromDate = new Date(fromDate);
       adjustedFromDate.setHours(0, 0, 0, 0);
@@ -132,7 +135,7 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
               rowNo: index + 1,
               time: unixTimestamp,
               value: parseFloat(msg.message),
-              timestamp: new Date(unixTimestamp * 1000).toISOString(), 
+              timestamp: new Date(unixTimestamp * 1000).toISOString(),
             };
           })
           .filter(Boolean);
@@ -142,7 +145,7 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
         if (data.length > 0) {
           areaSeriesRef.current.setData(data.map(({ time, value }) => ({ time, value })));
           chartRef.current.timeScale().fitContent();
-          setGraphData(data); 
+          setGraphData(data);
         } else {
           console.log("No data to plot after mapping");
           areaSeriesRef.current.setData([]);
@@ -157,6 +160,8 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
       console.error("Error fetching graph data:", error);
       areaSeriesRef.current.setData([]);
       setGraphData([]);
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -185,8 +190,15 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
   };
 
   return (
-    <div>
-      <div className="_historygraph_chart_container" ref={chartContainerRef}></div>
+    <div className="_historygraph_wrapper">
+      <div className="_historygraph_chart_container" ref={chartContainerRef}>
+        {isLoading && (
+          <div className="_historygraph_loading_overlay">
+            <div className="_historygraph_spinner"></div>
+            <p className="_historygraph_loading_text">Fetching Data...</p>
+          </div>
+        )}
+      </div>
       <div className="_historygraph_controls_container">
         <div className="_historygraph_date_filter_row">
           <div className="_historygraph_datepicker_wrapper from-to-date">
@@ -330,10 +342,10 @@ const HistoryGraph = ({ topic, height , topicLabel }) => {
           </div>
         </div>
         <div className="_historygraph_button_group">
-          <button className="_historygraph_submit_btn" onClick={fetchGraphData}>
-            Apply
+          <button className="_historygraph_submit_btn" onClick={fetchGraphData} disabled={isLoading}>
+            {isLoading ? "Loading..." : "Apply"}
           </button>
-          <button className="_historygraph_download_btn" onClick={downloadCSV}>
+          <button className="_historygraph_download_btn" onClick={downloadCSV} disabled={isLoading}>
             <span className="_historygraph_excel_icon"></span> Download CSV
           </button>
         </div>
