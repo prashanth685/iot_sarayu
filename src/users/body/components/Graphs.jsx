@@ -27,12 +27,14 @@ const Dashboard = () => {
   const [allTopicsWithLabels, setAllTopicsWithLabels] = useState([]);
   const itemsPerPage = 4;
 
-  // State to store time range and last fetch time for each topic
   const [timeRanges, setTimeRanges] = useState({});
-  const [lastFetchTimes, setLastFetchTimes] = useState({}); // New state for tracking last fetch times
+  const [lastFetchTimes, setLastFetchTimes] = useState({});
   const [fetchingTopics, setFetchingTopics] = useState(new Set());
+  const [supervisorTopics, setSupervisorTopics] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isPageChanging, setIsPageChanging] = useState(false);
 
-  const RATE_LIMIT_MS = 120000; // 2 minutes in milliseconds
+  const RATE_LIMIT_MS = 120000;
 
   useEffect(() => {
     fetchAllTopicsLabels();
@@ -76,9 +78,7 @@ const Dashboard = () => {
     const lastFetch = lastFetchTimes[topic] || 0;
     const timeSinceLastFetch = now - lastFetch;
 
-    // Only fetch if 2 minutes have passed since the last fetch
     if (timeSinceLastFetch < RATE_LIMIT_MS) {
-      // console.log(`Rate limit: Skipping fetch for ${topic}, ${Math.round((RATE_LIMIT_MS - timeSinceLastFetch) / 1000)}s remaining`);
       return;
     }
 
@@ -123,7 +123,6 @@ const Dashboard = () => {
         [topic]: res.data[topic] || { avg: "N/A", min: null, max: null },
       }));
 
-      // Update last fetch time
       setLastFetchTimes((prev) => ({
         ...prev,
         [topic]: Date.now(),
@@ -144,12 +143,36 @@ const Dashboard = () => {
     }
   }, [fetchingTopics, lastFetchTimes]);
 
+  const fetchTopicsWithPagination = async (page = 1) => {
+    if (!navHeader?._id) return;
+    setIsPageChanging(true);
+    try {
+      const res = await apiClient.get(`/auth/getusertopics/${navHeader._id}`, {
+        params: { page, limit: itemsPerPage },
+      });
+      const { topics, totalPages } = res.data.data;
+      setSupervisorTopics(topics.filter((topic) => !topic.endsWith("|backup")));
+      setTotalPages(totalPages);
+    } catch (error) {
+      console.log(error.message);
+      toast.error("Failed to fetch supervisor topics");
+    } finally {
+      setIsPageChanging(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user.role === "supervisor" && navHeader?._id) {
+      fetchTopicsWithPagination(currentPage + 1);
+    }
+  }, [navHeader, user.role, currentPage]);
+
   useEffect(() => {
     const topics =
-      user.role === "supervisor" && navHeader?.topics?.length > 0
-        ? navHeader.topics.filter((topic) => !topic.endsWith("|backup")) // Filter out backup topics
+      user.role === "supervisor" && supervisorTopics.length > 0
+        ? supervisorTopics
         : loggedInUser?.graphwl?.length > 0
-        ? loggedInUser.graphwl.filter((topic) => !topic.endsWith("|backup")) // Filter out backup topics
+        ? loggedInUser.graphwl.filter((topic) => !topic.endsWith("|backup"))
         : [];
 
     if (topics.length > 0) {
@@ -171,14 +194,13 @@ const Dashboard = () => {
         fetchStatsForTopic(topic, timeRange);
       });
     }
-  }, [navHeader?.topics, loggedInUser?.graphwl, user.role, fetchStatsForTopic, timeRanges]);
+  }, [supervisorTopics, loggedInUser?.graphwl, user.role, fetchStatsForTopic, timeRanges]);
 
   const handleTimeRangeChange = (topic, newTimeRange) => {
     setTimeRanges((prev) => ({
       ...prev,
       [topic]: newTimeRange,
     }));
-    // Fetch immediately when time range changes, bypassing the rate limit once
     fetchStatsForTopic(topic, newTimeRange);
   };
 
@@ -192,14 +214,9 @@ const Dashboard = () => {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   };
 
-  const supervisorTopics = navHeader?.topics?.filter((topic) => !topic.endsWith("|backup")) || [];
-  const pageCount = Math.ceil(supervisorTopics.length / itemsPerPage);
-  const currentSupervisorTopics = supervisorTopics.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-
   const graphwlTopics = loggedInUser?.graphwl?.filter((topic) => !topic.endsWith("|backup")) || [];
+  const currentSupervisorTopics = supervisorTopics;
+  const pageCount = totalPages;
 
   const getTopicLabel = (topic) => {
     const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
@@ -307,7 +324,7 @@ const Dashboard = () => {
     );
   }
 
-  if (supervisorTopics.length === 0) {
+  if (supervisorTopics.length === 0 && !isPageChanging) {
     return (
       <div
         style={{
