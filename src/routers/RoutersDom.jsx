@@ -34,6 +34,7 @@ import LayoutAssign from "../admin/components/DashboardComponents/LayoutAssign";
 import AllSupervisors from "../users/body/components/AllSupervisors";
 import DualTopicDashboard from "../users/body/components/DualTopicDashboard";
 import HistoryGraphPage from "../users/body/components/HistoryGraphPage";
+import BackupDB from "../admin/components/BackupDB";
 
 const RoutersDom = () => {
   return (
@@ -49,6 +50,7 @@ const RoutersDom = () => {
           />
 
           <Route path="/dashboard/TagCreation" element={<TagCreation />} />
+          <Route path="/dashboard/backupdb" element={<BackupDB />} />
           <Route path="/dashboard/ConfigDevice" element={<ConfigDevice />} />
           <Route path="/dashboard/devices" element={<Devices />} />
           <Route path="/dashboard/reports" element={<Reports />} />

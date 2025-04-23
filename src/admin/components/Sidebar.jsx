@@ -69,6 +69,19 @@ const Sidebar = () => {
         >
           Users
         </p>
+        <p
+          className={
+            activeNavBtn === "admin_backupdb"
+              ? "_professional_navbar_link _professional_navbar_link_active"
+              : "_professional_navbar_link"
+          }
+          onClick={() => [
+            navigate("/dashboard/backupdb"),
+            setActiveNavBtn("admin_backupdb"),
+          ]}
+        >
+          BackupDB
+        </p>
       </div>
       <div className="_professional_navbar_logout">
         <button onClick={handleLogout}>
