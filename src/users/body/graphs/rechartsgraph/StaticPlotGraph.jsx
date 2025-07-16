@@ -56,7 +56,7 @@ const StaticPlotGraph = ({ topic, height, dy }) => {
   }));
 
   useEffect(() => {
-    const socket = io("http://3.108.252.186:4000", { transports: ["websocket",'polling'] });
+    const socket = io("http://52.66.47.193:4000", { transports: ["websocket",'polling'] });
 
     const handleLiveMessage = (message) => {
       try {
