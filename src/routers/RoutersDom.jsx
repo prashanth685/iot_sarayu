@@ -35,6 +35,7 @@ import AllSupervisors from "../users/body/components/AllSupervisors";
 import DualTopicDashboard from "../users/body/components/DualTopicDashboard";
 import HistoryGraphPage from "../users/body/components/HistoryGraphPage";
 import BackupDB from "../admin/components/BackupDB";
+import GatewayStat from "../users/body/components/GatewayStat";
 
 const RoutersDom = () => {
   return (
@@ -83,6 +84,7 @@ const RoutersDom = () => {
           <Route path="/allusers/users" element={<AllOperators />} />
           <Route path="/allusers/supervisors" element={<AllSupervisors />} />
           <Route path="/allusers/favorites" element={<Favorite />} />
+          <Route path="/allusers/gatewaystat" element={<GatewayStat />} />
           <Route path="/allusers/digitalmeter" element={<DigitalMeter />} />
           <Route
             path="/allusers/layoutview/:topic/:layout"

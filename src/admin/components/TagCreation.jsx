@@ -11,6 +11,7 @@ const TagCreation = () => {
   const [createTagname, setCreateTagname] = useState("");
   const [createUnit, setCreateUnit] = useState("");
   const [createLabel, setCreateLabel] = useState("");
+  const [createDevice, setCreateDevice] = useState("");
   const [topiCreated, setTopicCreated] = useState(false);
   const [createTagnameValidationError, setCreateTagnameValidationError] = useState("");
   const [recetntFiveTopic, setRecentFiveTopic] = useState([]);
@@ -38,6 +39,11 @@ const TagCreation = () => {
     setCreateLabel(e.target.value);
   };
 
+  const handleDeviceChange = (e) => {
+    setCreateTagnameValidationError("");
+    setCreateDevice(e.target.value);
+  };
+
   const validateInputs = () => {
     const tagnameRegex = /^[a-zA-Z0-9_]+\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_]+$/;
     if (!tagnameRegex.test(createTagname)) {
@@ -49,6 +55,10 @@ const TagCreation = () => {
       return false;
     }
     if (!createLabel.trim()) {
+      setCreateTagnameValidationError("_futuristic_dashboard_input_error");
+      return false;
+    }
+    if (!createDevice.trim()) {
       setCreateTagnameValidationError("_futuristic_dashboard_input_error");
       return false;
     }
@@ -104,12 +114,14 @@ const TagCreation = () => {
       await apiClient.post("/mqtt/create-tagname", {
         topic: combinedTopic,
         label: createLabel,
+        device: createDevice,
       });
       toast.success("TagName created successfully!");
       await fetchRecentFiveTopics();
       setCreateTagname("");
       setCreateUnit("");
       setCreateLabel("");
+      setCreateDevice("");
       setCreateTagnameValidationError("");
       setTopicCreated(!topiCreated);
     } catch (error) {
@@ -125,6 +137,7 @@ const TagCreation = () => {
       await apiClient.post("/mqtt/create-tagname", {
         topic: combinedTopic,
         label: createLabel,
+        device: createDevice,
       });
       toast.success("TagName created successfully!");
       await apiClient.post("/mqtt/subscribe", {
@@ -136,6 +149,7 @@ const TagCreation = () => {
       setCreateTagname("");
       setCreateUnit("");
       setCreateLabel("");
+      setCreateDevice("");
       setCreateTagnameValidationError("");
       setTopicCreated(!topiCreated);
     } catch (error) {
@@ -175,13 +189,13 @@ const TagCreation = () => {
       <aside className="_futuristic_dashboard_sidebar">
         <h2 className="_futuristic_dashboard_title">Create TagName</h2>
         <p className={`_futuristic_dashboard_note ${createTagnameValidationError}`}>
-          Format: company/device/tagname | unit
+          Format: company/gateway/tagname | unit
         </p>
         <input
           type="text"
           value={createTagname}
           onChange={handleTagnameChange}
-          placeholder="Enter tagname (e.g., company/device/tagname)"
+          placeholder="Enter tagname (e.g., company/gateway/tagname)"
           className={`_futuristic_dashboard_search_input ${createTagnameValidationError}`}
         />
         <input
@@ -196,6 +210,13 @@ const TagCreation = () => {
           value={createLabel}
           onChange={handleLabelChange}
           placeholder="Enter label (e.g., Temperature)"
+          className={`_futuristic_dashboard_search_input ${createTagnameValidationError}`}
+        />
+        <input
+          type="text"
+          value={createDevice}
+          onChange={handleDeviceChange}
+          placeholder="Enter device name (e.g., VMS8000)"
           className={`_futuristic_dashboard_search_input ${createTagnameValidationError}`}
         />
         <div className="_futuristic_dashboard_button_group">

@@ -169,6 +169,7 @@ const Dashboard = () => {
   const [employeesList, setEmployeesList] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [allTopicsWithLabels, setAllTopicsWithLabels] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState("all");
   const itemsPerPage = 9;
   const { setNavHeader } = useContext(navHeaderContaxt);
 
@@ -183,6 +184,7 @@ const Dashboard = () => {
   const fetchAllTopicsLabels = async () => {
     try {
       const res = await apiClient.get(`/mqtt/all-topics-labels`);
+      console.log("Fetched all topics with labels and device:", res.data.data);
       setAllTopicsWithLabels(res.data.data);
     } catch (error) {
       console.log(error.message);
@@ -282,7 +284,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery]);
+  }, [searchQuery, selectedDevice]);
 
   const handleAddFavorite = useCallback(async (topic) => {
     try {
@@ -354,8 +356,25 @@ const Dashboard = () => {
     setSelectedEmployee(selected);
     setNavHeader(selected);
     setLoggedInUser((prev) => ({ ...prev, topics: selected.topics || [] }));
+    setSelectedDevice("all"); // Reset device filter when employee changes
     localStorage.setItem("selectedHeaderOne", selected.headerOne);
   };
+
+  const handleDeviceSelect = (device) => {
+    setSelectedDevice(device);
+    setCurrentPage(0); // Reset to first page when device filter changes
+  };
+
+  const uniqueDevices = useMemo(() => {
+    const topicsToParse = user.role === "supervisor" && selectedEmployee ? selectedEmployee.topics : loggedInUser?.topics;
+    const devices = topicsToParse
+      ?.map((topic) => {
+        const matchedTopic = allTopicsWithLabels.find((t) => t.topic === topic);
+        return matchedTopic?.device || null;
+      })
+      .filter((device) => device); // Remove null/undefined devices
+    return ["all", ...new Set(devices)]; // Include "all" and unique devices
+  }, [allTopicsWithLabels, selectedEmployee, loggedInUser?.topics, user.role]);
 
   const parsedTopics = useMemo(() => {
     const topicsToParse = user.role === "supervisor" && selectedEmployee ? selectedEmployee.topics : loggedInUser?.topics;
@@ -374,17 +393,26 @@ const Dashboard = () => {
           weekMax: Math.random() * 100,
           yesterdayMax: Math.random() * 100,
           todayMax: Math.random() * 100,
+          device: matchedTopic?.device || "-",
         };
       }) || [];
   }, [loggedInUser?.topics, selectedEmployee, user.role, allTopicsWithLabels]);
 
   const filteredParsedTopics = useMemo(() => {
-    if (!searchQuery.trim()) return parsedTopics;
+    let filtered = parsedTopics;
+    
+    // Apply device filter
+    if (selectedDevice !== "all") {
+      filtered = filtered.filter((topic) => topic.device === selectedDevice);
+    }
+
+    // Apply search query filter
+    if (!searchQuery.trim()) return filtered;
     const query = searchQuery.trim().toLowerCase();
-    return parsedTopics.filter((topic) =>
+    return filtered.filter((topic) =>
       topic.tagName.toLowerCase().includes(query)
     );
-  }, [parsedTopics, searchQuery]);
+  }, [parsedTopics, searchQuery, selectedDevice]);
 
   const sortedParsedTopics = useMemo(() => {
     let sortableItems = [...filteredParsedTopics];
@@ -509,21 +537,37 @@ const Dashboard = () => {
           </button>
         </div>
         {user?.role === "supervisor" && (
-          <div className="dropdown alluser_dropdown_companyswitch_">
-            <select
-              className="form-select"
-              value={selectedEmployee?._id || ""}
-              onChange={(e) => handleEmployeeSelect(e.target.value)}
-              style={{ width: "200px", padding: "8px" }}
-            >
-              <option value="" disabled>Select an employee</option>
-              {employeesList?.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="dropdown alluser_dropdown_companyswitch_">
+              <select
+                className="form-select"
+                value={selectedEmployee?._id || ""}
+                onChange={(e) => handleEmployeeSelect(e.target.value)}
+                style={{ width: "200px", padding: "8px" }}
+              >
+                <option value="" disabled>Select an user</option>
+                {employeesList?.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="dropdown alluser_dropdown_deviceswitch_">
+              <select
+                className="form-select"
+                value={selectedDevice}
+                onChange={(e) => handleDeviceSelect(e.target.value)}
+                style={{ width: "200px", padding: "8px" }}
+              >
+                {uniqueDevices.map((device) => (
+                  <option key={device} value={device}>
+                    {device === "all" ? "All Devices" : device}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
         )}
       </section>
 

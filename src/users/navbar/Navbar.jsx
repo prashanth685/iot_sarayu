@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+ import React, { useContext, useEffect, useState } from "react";
 import "./Navbar.css";
 import "../style.css";
 import { handleWarningModel } from "../../redux/slices/UserSlice";
@@ -142,6 +142,14 @@ const Navbar = () => {
           <NavLink className={"users_navbar_link"} to={"/allusers/report"}>
             Report
           </NavLink>
+          {user?.role === "supervisor" && (
+            <>
+            <div className="users_navbar_link_separator"></div>
+          <NavLink className={"users_navbar_link"} to={"/allusers/gatewaystat"}>
+            Gateway
+          </NavLink>
+            </>
+            )}
           {user.role === "supervisor" && (
             <>
               <div className="users_navbar_link_separator"></div>
