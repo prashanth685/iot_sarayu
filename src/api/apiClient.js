@@ -5,7 +5,7 @@ import axios from "axios";
 const apiClient = axios.create({
   // Set the base URL for all requests made with this axios instance
   // Local development environment: http://localhost:5000/api/v1
-  baseURL: "http://localhost:5000/api/v1",
+  baseURL: "http://52.66.47.193:5000/api/v1",
   // Note: For deployment, the base URL can be updated to:
   // - Render.com: https://sarayu-node-backend-hti6.onrender.com/api/v1
   // - AWS: http://13.127.36.85:5000/api/v1
